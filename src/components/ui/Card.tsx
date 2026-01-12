@@ -1,4 +1,4 @@
-import { HTMLAttributes } from 'react';
+import { type HTMLAttributes } from "react";
 
 /**
  * Card component props.
@@ -32,8 +32,8 @@ export interface CardContentProps extends HTMLAttributes<HTMLDivElement> {
  * Reusable card container component with orange brand theme.
  * Provides consistent card styling with shadow and border.
  */
-export function Card({ className = '', children, ...props }: CardProps) {
-  const baseStyles = 'bg-white rounded-lg shadow border border-gray-200';
+export function Card({ className = "", children, ...props }: CardProps) {
+  const baseStyles = "bg-white rounded-lg shadow border border-gray-200";
   const combinedClassName = `${baseStyles} ${className}`.trim();
 
   return (
@@ -47,8 +47,12 @@ export function Card({ className = '', children, ...props }: CardProps) {
  * Card header section component.
  * Provides spacing and styling for card headers.
  */
-export function CardHeader({ className = '', children, ...props }: CardHeaderProps) {
-  const baseStyles = 'px-6 py-4 border-b border-gray-200';
+export function CardHeader({
+  className = "",
+  children,
+  ...props
+}: CardHeaderProps) {
+  const baseStyles = "px-6 py-4 border-b border-gray-200";
   const combinedClassName = `${baseStyles} ${className}`.trim();
 
   return (
@@ -62,8 +66,12 @@ export function CardHeader({ className = '', children, ...props }: CardHeaderPro
  * Card title component.
  * Styled heading for card titles with orange brand accent.
  */
-export function CardTitle({ className = '', children, ...props }: CardTitleProps) {
-  const baseStyles = 'text-lg font-semibold text-gray-900';
+export function CardTitle({
+  className = "",
+  children,
+  ...props
+}: CardTitleProps) {
+  const baseStyles = "text-lg font-semibold text-gray-900";
   const combinedClassName = `${baseStyles} ${className}`.trim();
 
   return (
@@ -77,8 +85,12 @@ export function CardTitle({ className = '', children, ...props }: CardTitleProps
  * Card content section component.
  * Provides padding for card content.
  */
-export function CardContent({ className = '', children, ...props }: CardContentProps) {
-  const baseStyles = 'px-6 py-4';
+export function CardContent({
+  className = "",
+  children,
+  ...props
+}: CardContentProps) {
+  const baseStyles = "px-6 py-4";
   const combinedClassName = `${baseStyles} ${className}`.trim();
 
   return (
@@ -87,4 +99,3 @@ export function CardContent({ className = '', children, ...props }: CardContentP
     </div>
   );
 }
-
