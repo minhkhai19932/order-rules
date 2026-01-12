@@ -1,0 +1,65 @@
+# English Comments Required (React/TS)
+
+For every generated or modified code in TS/TSX files:
+
+## Mandatory doc comments
+
+Add an English doc comment directly above:
+
+- Every React component (function component)
+- Every custom hook (functions starting with `use`)
+- Every exported function
+- Every exported type/interface/enum that represents domain concepts
+- Every Zustand store action (if present)
+
+If the file contains internal helper functions:
+
+- Add at least a 1-line English doc comment above each helper unless it is a trivial one-liner.
+- For non-trivial helpers, include params/returns/edge cases.
+
+## Comment style
+
+- Use JSDoc/TSDoc style `/** ... */`.
+- Comments must explain purpose and constraints (“why/what”), not restate obvious code.
+- Keep comments short and accurate. Update comments when behavior changes.
+- Do not add noisy comments like “This is a button component” unless it clarifies intent/constraints.
+
+## Required content guidelines
+
+- Components: purpose + key behavior + important props + accessibility notes if relevant.
+- Hooks: purpose + returned values + side effects (subscriptions, timers, network) + cleanup behavior.
+- Functions: purpose + params + returns + throws (if applicable) + important invariants.
+- Store actions: purpose + what state changes + error handling/side effects.
+
+## Example templates
+
+Component:
+"""
+/\*\*
+
+- Renders <what> for <who/where>.
+- Key behavior: <1-2 bullet lines>.
+- Accessibility: <notes if relevant>.
+  \*/
+  """
+
+Hook:
+"""
+/\*\*
+
+- Encapsulates <domain/UI> state for <feature>.
+- Returns: <main returned values>.
+- Side effects: <fetch/subscription/timers>, cleanup: <how>.
+  \*/
+  """
+
+Function:
+"""
+/\*\*
+
+- Computes/Transforms <X> for <Y>.
+- @param ...
+- @returns ...
+- @throws ...
+  \*/
+  """

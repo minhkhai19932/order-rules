@@ -1,0 +1,10 @@
+---
+files: "services/**/*"
+---
+
+# Services / API
+
+- Put network/localStorage I/O behind service modules.
+- Service functions must return typed results or throw typed errors consistently.
+- Do not log PII/secrets. Redact sensitive fields.
+- UI/components should not embed endpoint details; call services or store actions.

@@ -1,0 +1,14 @@
+---
+files:
+  - "src/**/*.tsx"
+  - "src/**/*.css"
+  - "src/**/*.scss"
+  - "src/**/*.tailwind.css"
+---
+
+# TailwindCSS
+
+- Prefer Tailwind utilities; avoid ad-hoc CSS unless necessary.
+- Tailwind v4 + Vite: use `@tailwindcss/vite` and `@import "tailwindcss";` in CSS. (Do not default to v3 `@tailwind base/components/utilities`.)
+- Keep class lists readable; extract repeated patterns into components.
+- Avoid arbitrary values like `mt-[13px]` unless required.

@@ -1,0 +1,10 @@
+---
+files: "stores/**/*"
+---
+
+# Zustand
+
+- In components, always select the smallest slice (`useStore(s => s.x)`), never the whole store.
+- Avoid storing derived state; compute via selectors when possible.
+- Async actions: use a typed status (`idle|loading|success|error`) when UI depends on it.
+- Keep store boundaries by feature/domain, not one global mega-store.

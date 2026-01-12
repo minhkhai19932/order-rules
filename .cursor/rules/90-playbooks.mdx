@@ -1,0 +1,10 @@
+---
+manual:
+  trigger: "@big-refactor"
+  description: "Use for large refactors or migrations only"
+  steps:
+    - create_staged_plan: true
+    - add_tests_first: true
+    - keep_compatibility: true
+    - note_breaking_changes: true
+---

@@ -1,0 +1,10 @@
+---
+files: "src/**/*.tsx"
+---
+
+# React Components
+
+- Use function components + hooks only.
+- Keep components focused; move business logic to hooks/services/stores.
+- `useEffect` only for side effects; do not hide core logic inside effects.
+- Avoid unnecessary re-renders: stable props, avoid inline heavy objects/functions when it matters.

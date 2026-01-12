@@ -1,0 +1,42 @@
+language: typescript
+
+output:
+  preference: patch
+commands_only_trigger: "commands only"
+  no_explanations_unless_asked: true
+
+workflow:
+  minimal_diff: true
+  avoid_unrelated_refactors: true
+
+typescript:
+  forbid_any: true
+  prefer_unknown_over_any: true
+  avoid_unsafe_assertions: true
+
+react:
+  function_components_only: true
+  hooks_only: true
+
+zustand:
+  prefer_selectors: true
+  avoid_whole_store_subscribe: true
+
+tailwind:
+  prefer_utility_classes: true
+  avoid_arbitrary_values: true
+
+safety:
+  never_output_secrets: true
+  never_log_pii: true
+
+forbidden:
+  - hardcode tokens
+  - hardcode passwords
+  - print .env contents
+
+best_effort_without_questions: true
+if_missing_context:
+  - list_missing_files
+  - state_assumptions
+ask_before_large_changes: true

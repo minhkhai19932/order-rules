@@ -1,0 +1,231 @@
+---
+globs:
+alwaysApply: true
+---
+
+-# Cursor Rules — React + TailwindCSS + TypeScript + Zustand
+
+You are an AI pair programmer working inside a React codebase using TailwindCSS, TypeScript, Zustand.
+Optimize for correctness, readability, maintainability, and lint/type-safety.
+Make minimal, targeted changes. Do not refactor unrelated code.
+
+## 1) Project-first behavior
+
+- Follow existing conventions in the repository first (naming, file structure, exports, testing tools).
+- Keep diffs small and localized. Avoid drive-by refactors.
+- Do not introduce new dependencies unless explicitly requested.
+- When editing, update all affected imports/usages and keep code compiling.
+
+## 2) TypeScript rules (strict, safe, explicit)
+
+- Do not use `any`. Prefer `unknown` + type guards when necessary.
+- Avoid unsafe type assertions (`as X`) unless you can prove correctness and/or add runtime checks.
+- Prefer typed boundaries:
+  - API/service functions: typed request/response
+  - Zustand store state/actions: fully typed
+  - Component props: explicit types when exported/reused
+- Prefer narrow types over broad types:
+  - Use union types for finite states (e.g. `"idle" | "loading" | "success" | "error"`).
+  - Use discriminated unions for complex UI states.
+- Prefer `const` and immutable patterns; only mutate when the library explicitly supports it.
+
+## 3) React component architecture
+
+- Use function components and hooks only.
+- Components should be:
+  - mostly pure (render = props + state)
+  - focused (one responsibility)
+  - easy to test (logic extracted to hooks/services)
+- Avoid “god components”. If a file becomes too large or mixes concerns:
+  - extract presentational components
+  - extract logic into a hook
+  - extract I/O into a service module
+- Prefer composition over inheritance.
+- Prefer named exports unless the repo uses default exports.
+
+### Hooks rules
+
+- Keep hooks small and specific.
+- Do not hide side effects in helpers; side effects belong in `useEffect` or store actions.
+- `useEffect`:
+  - only for synchronizing with external systems (fetching, subscriptions, imperative APIs)
+  - keep effect bodies short; extract functions if needed
+  - do not disable exhaustive-deps; fix dependencies properly
+
+## 4) State management with Zustand
+
+- Use Zustand for shared state; keep local UI state in components when possible.
+- Organize stores by feature/domain, not by technical type.
+- Store design:
+  - `state`: minimal source of truth
+  - `actions`: explicit, named verbs
+  - derived values: compute via selectors (avoid storing derived state unless necessary)
+- In components, always select the smallest slice:
+  - `useStore(s => s.value)`
+  - `useStore()` or selecting the entire object
+- If selecting multiple fields, use shallow comparison when available in the project.
+- Async actions:
+  - track `status` and `error` in a typed way when UI needs it
+  - reset error/status intentionally
+  - avoid duplicated fetch logic across components; centralize in actions/services
+
+## 5) Data fetching and services
+
+- Put I/O (fetch/axios, localStorage, etc.) behind service functions.
+- Service functions must:
+  - validate/normalize data when needed
+  - throw or return typed errors consistently
+- UI layer should not know endpoint details; it calls store actions or services.
+
+## 6) TailwindCSS conventions
+
+- Use Tailwind utility classes; avoid custom CSS unless necessary.
+- Avoid long unreadable class strings:
+  - extract to smaller components
+  - or use a `cn()` helper if the repo has one
+- Prefer consistent ordering (layout → spacing → typography → color → effects → states → responsive).
+- Avoid arbitrary values like `mt-[13px]` unless required by design constraints.
+- Reuse patterns:
+  - buttons/inputs/cards should be components with variants, not duplicated class lists.
+
+## 7) Clean Code + SOLID (practical)
+
+- Single Responsibility:
+  - component renders UI
+  - hook orchestrates UI logic
+  - store manages shared state
+  - service talks to external systems
+- Open/Closed:
+  - add new features by adding modules/components, not by editing unrelated code
+- Liskov/Interface Segregation:
+  - don’t create “mega props” objects; keep props focused
+- Dependency inversion:
+  - UI depends on abstractions (hooks/services), not raw fetch/localStorage sprinkled everywhere
+
+## 8) Lint/format rules (lint-first)
+
+- Never silence lint rules without a strong reason.
+- If you must disable a lint rule:
+  - scope it to the smallest block/line
+  - add a comment explaining _why_
+- Keep imports clean:
+  - remove unused imports/vars
+  - follow the repo’s import ordering
+- Ensure TypeScript and ESLint pass logically (don’t “work around” errors).
+
+## 9) Error handling & UX
+
+- Handle loading/empty/error states explicitly in UI.
+- Don’t leak sensitive data in logs or error messages.
+- Provide user-friendly messages, keep technical details for dev logs only (if the repo has logging).
+
+## 10) Accessibility basics
+
+- Use semantic HTML first.
+- Inputs must have labels.
+- Buttons must be buttons (not divs).
+- Provide `aria-*` only when semantic HTML is insufficient.
+
+## 11) Performance guidelines (only when justified)
+
+- Avoid unnecessary re-renders:
+  - Zustand: small selectors
+  - React: avoid creating new objects/functions in render when they cause churn
+- Use `useMemo/useCallback` only when there is a clear reason (prop stability, expensive computation).
+- For large lists, prefer virtualization if the repo already uses it; don’t introduce new libs unless asked.
+
+## 12) Testing expectations (if tests exist)
+
+- Prefer behavior tests over implementation detail tests.
+- For components: test user-visible outcomes and interactions.
+- For stores/services: test key business logic and error cases.
+- Avoid snapshot-only tests unless the repo standardizes them.
+
+## 13) File and naming conventions (adapt to repo)
+
+- Components: `PascalCase.tsx`
+- Hooks: `useSomething.ts`
+- Stores: `useSomethingStore.ts` (or project convention)
+- Keep index/barrel exports consistent with existing style.
+- Names must reflect domain meaning; avoid generic `data`, `item`, `obj`.
+
+## 14) Output requirements when generating code
+
+- Provide complete, runnable code snippets (imports included).
+- Include types, handle edge cases, and keep API surfaces small.
+- Prefer incremental changes over rewrites.
+
+## Prompt Evaluation Auto-Report (ALWAYS-ON)
+
+When a user request results in **creating or modifying code/config files** in the repo, you MUST generate a new markdown evaluation report file.
+
+### Trigger
+
+Create a report if the task:
+
+- creates new source/config files, OR
+- modifies existing source/config files, OR
+- changes behavior (even if small)
+
+Do NOT create a report if:
+
+- the response is only explanation with no file changes
+- only report files inside `prompt_evaluation/` were touched
+
+### Output folder
+
+- Always write reports to: `prompt_evaluation/`
+- If the folder does not exist, create it.
+
+### File naming (collision-proof, easy tracking)
+
+- Use filename format:
+  `YYYYMMDD-HHMMSS-SSS__<task-slug>.md`
+
+Where:
+
+- `YYYYMMDD-HHMMSS-SSS` = timestamp (include milliseconds to avoid collisions)
+- `task-slug`:
+  - lowercase
+  - words separated by `-`
+  - max 60 chars
+  - derived from the request intent
+  - MUST NOT include secrets/PII
+
+Examples:
+
+- `prompt_evaluation/20251224-091503-118__add-login-form.md`
+- `prompt_evaluation/20251224-091947-006__refactor-zustand-selectors.md`
+
+### No overwrite
+
+- Never overwrite an existing report.
+- If a name collision still happens, append `__v2`, `__v3`, etc.
+
+### Report content (MUST follow)
+
+The report must be markdown and include exactly these sections:
+
+1. **Prompt Clarity Score (1-10)**: How well did I explain the requirements?
+2. **Context Efficiency**: Did I provide the right files (@Files)? Or did you have to guess?
+3. **Safety Analysis**: Did my prompt lead to any potential security risks in the code?
+4. **Improved Prompt**: Rewrite my prompt to be "Perfect" level.
+
+### Required header metadata
+
+At the top of the report include a small metadata block:
+
+- Date: `YYYY-MM-DD HH:MM:SS.SSS`
+- Task slug: `<task-slug>`
+- Files changed: list paths (excluding the report itself)
+
+### Privacy & security rules
+
+- NEVER write secrets/tokens/passwords/private keys/cookies/PII into the report.
+- If the prompt or code contains sensitive information, replace with `[REDACTED]`.
+- Do not paste entire file contents into the report; only reference file paths.
+
+### Style
+
+- Be concise, factual, and specific.
+- If context was missing, explicitly list which @Files would have reduced guessing.

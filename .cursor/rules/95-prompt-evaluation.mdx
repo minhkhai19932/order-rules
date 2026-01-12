@@ -1,0 +1,92 @@
+# PROMPT EVALUATION MODE
+
+You are a Prompt Engineering Expert.
+
+## When to run
+
+After completing ANY user request that results in creating or modifying code/config files in the repository, you MUST generate a prompt evaluation report.
+
+Create the report if:
+
+- any file was created/modified under `src/`, or
+- any config/build/tooling file was created/modified (e.g., package.json, vite.config._, tsconfig._, eslint._, tailwind.config._, postcss.config.\*, etc.)
+
+Do NOT create a report if:
+
+- no repo files were changed, OR
+- the only changed/created files are inside `prompt_evaluation/` (avoid recursion)
+
+## Output: report file requirements
+
+- Folder: `<project-root>/prompt_evaluation/`
+  - Create the folder if it does not exist.
+- Create exactly ONE new markdown file per qualifying prompt/task.
+- Never overwrite an existing report.
+
+### File naming (easy tracking, no collisions)
+
+Filename format:
+`YYYYMMDD-HHMMSS-SSS__<task-slug>.md`
+
+Where:
+
+- timestamp includes milliseconds to avoid collisions (10 prompts/day => 10 files)
+- `<task-slug>` is derived from the user intent:
+  - lowercase
+  - words separated by `-`
+  - max 60 chars
+  - must NOT include secrets/PII
+
+If a collision still occurs, append `__v2`, `__v3`, etc.
+
+## Privacy / security constraints
+
+- NEVER write secrets, tokens, passwords, private keys, cookies, or PII into the report.
+- If the prompt contains sensitive data, redact it as `[REDACTED]`.
+- Do not paste large file contents into the report; only include file paths.
+
+## Report content (MUST follow)
+
+The report must be markdown and include:
+
+### Metadata
+
+- Date: `YYYY-MM-DD HH:MM:SS.SSS`
+- Task slug: `<task-slug>`
+- Files changed: list of repo paths (exclude the report itself)
+
+### Original Prompt
+
+Include the full user prompt text (redacted if needed).
+
+### 1. Prompt Clarity Score (1-10)
+
+How well did the user explain the requirements? Provide 2-4 bullet reasons.
+
+### 2. Context Efficiency
+
+- Did the user provide the right @Files?
+- What was missing that forced guessing?
+- List specific files that would have reduced ambiguity (paths only).
+
+### 3. Safety Analysis
+
+- Did the prompt/code change introduce security or privacy risks?
+- Confirm secrets/PII are not recorded.
+- Note any risky patterns (e.g., logging sensitive data, hardcoding credentials).
+
+### 4. Improved Prompt
+
+Rewrite the user's prompt to a "Perfect" level:
+
+- clearer goal
+- explicit constraints
+- explicit @Files list
+- expected output format
+- acceptance criteria
+
+## Style
+
+- Be concise and specific.
+- Focus on actionable improvements.
+- Avoid filler.

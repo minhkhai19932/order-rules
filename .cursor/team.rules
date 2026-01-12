@@ -1,0 +1,58 @@
+
+collaboration:
+  pr_requirements:
+    - include_summary_and_test_plan: true
+    - link_ticket_if_applicable: true
+    - note_breaking_changes: true
+  review:
+    - prefer_small_prs: true
+    - avoid_mixed_concerns_in_one_pr: true
+
+quality_gates:
+  before_merge:
+    - run_lint: "npm run lint"
+    - run_typecheck: "npm run typecheck"
+    - run_tests_if_present: "npm test"
+  tests_policy:
+    - for_bugfix: add_regression_test_when_possible
+    - for_new_feature: add_happy_path_and_failure_case
+
+dependencies:
+  new_dependency_policy:
+    - require_rationale_and_alternatives: true
+    - require_license_check: true
+    - prefer_existing_deps_over_new: true
+
+security_and_privacy:
+  handling_sensitive_data:
+    - never_commit_real_secrets: true
+    - use_env_example_file: ".env.example"
+    - redact_tokens_and_pii_in_logs_and_reports: true
+  incident_hygiene:
+    - if_secret_leaked: rotate_and_document: true
+
+policies:
+  minimal_diff: true
+  no_unrelated_refactors: true
+  no_new_dependencies_without_request: true
+
+typescript:
+  forbid_any: true
+  no_unsafe_assertions_without_guards: true
+
+lint:
+  must_pass: true
+  forbid_blanket_eslint_disable: true
+
+tests:
+  required_when_available: true
+
+security:
+  forbid_secrets_in_code: true
+  forbid_secrets_in_output: true
+  forbid_logging_pii: true
+  forbid_hardcoded_credentials: true
+
+privacy:
+  never_print_env_file_contents: true
+  redact_sensitive_data: true
