@@ -9,6 +9,17 @@ export type ShippingStatus =
   | "CANCELLED";
 
 /**
+ * Order status values for overall order lifecycle.
+ */
+export type OrderStatus =
+  | "CANCELLED"
+  | "DELIVERED"
+  | "PENDING"
+  | "IN_TRANSIT"
+  | "OUT_FOR_DELIVERY"
+  | "RETURNED";
+
+/**
  * Order item within an order.
  */
 export interface OrderItem {
@@ -83,7 +94,7 @@ export interface Order {
   items: OrderItem[];
   pricing: OrderPricing;
   shipping: OrderShipping;
-  orderStatus: string;
+  orderStatus: OrderStatus;
   paymentMethod: string;
   paymentStatus: string;
   createdAt: string;
@@ -94,10 +105,15 @@ export interface Order {
  * Payload for creating a new order.
  */
 export interface CreateOrderPayload {
-  customer: OrderCustomer;
-  items: Array<Pick<OrderItem, "productId" | "quantity" | "unitPrice">>;
-  shippingAddress: ShippingAddress;
-  paymentMethod: string;
+  customer: {
+    name: string;
+    phone: string;
+    email: string;
+  };
+  items: Array<{
+    productId: string;
+    quantity: number;
+  }>;
 }
 
 /**
@@ -108,6 +124,6 @@ export interface UpdateOrderPayload {
   items?: Array<Pick<OrderItem, "productId" | "quantity" | "unitPrice">>;
   shippingAddress?: ShippingAddress;
   paymentMethod?: string;
-  orderStatus?: string;
+  orderStatus?: OrderStatus;
   paymentStatus?: string;
 }

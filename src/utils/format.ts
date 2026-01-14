@@ -57,3 +57,56 @@ export function formatDateTime(dateTime: string | undefined | null): string {
     return "-";
   }
 }
+
+/**
+ * Formats an order status value into a human-readable label.
+ * Falls back to "Unknown" for undefined or unexpected values.
+ */
+export function formatOrderStatusLabel(
+  status: import("../types/order").OrderStatus | null | undefined
+): string {
+  if (!status) {
+    return "Unknown";
+  }
+
+  const labels: Record<import("../types/order").OrderStatus, string> = {
+    PENDING: "Pending",
+    IN_TRANSIT: "In transit",
+    OUT_FOR_DELIVERY: "Out for delivery",
+    DELIVERED: "Delivered",
+    RETURNED: "Returned",
+    CANCELLED: "Cancelled",
+  };
+
+  return labels[status] ?? "Unknown";
+}
+
+/**
+ * Formats a shipping status value into a distinct human-readable label
+ * so it can be clearly differentiated from order status.
+ * Falls back to "Unknown" for undefined or unexpected values.
+ */
+export function formatShippingStatusLabel(
+  status: string | null | undefined
+): string {
+  if (!status) {
+    return "Unknown";
+  }
+
+  switch (status) {
+    case "PENDING":
+      return "Awaiting Pickup";
+    case "IN_TRANSIT":
+      return "On the Way";
+    case "OUT_FOR_DELIVERY":
+      return "Courier Out";
+    case "DELIVERED":
+      return "Shipment Received";
+    case "RETURNED":
+      return "Returned to Sender";
+    case "CANCELLED":
+      return "Shipment Cancelled";
+    default:
+      return "Unknown";
+  }
+}

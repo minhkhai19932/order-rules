@@ -4,7 +4,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { Order } from '../types';
 import type { CreateOrderPayload } from '../types/order';
-import { formatMoney, formatDateTime } from '../utils/format';
+import {
+  formatMoney,
+  formatDateTime,
+  formatOrderStatusLabel,
+  formatShippingStatusLabel,
+} from '../utils/format';
 import { usePagination } from '../hooks';
 import { Modal } from '../components/ui/Modal';
 import { Button } from '../components/ui/Button';
@@ -179,11 +184,9 @@ function OrderDetailsContent({ order }: { order: Order }) {
           <div>
             <div className="text-xs font-medium text-gray-500 uppercase">Shipping Status</div>
             <div className="mt-1">
-              {order.shipping?.status ? (
-                <Badge variant="default">{order.shipping.status}</Badge>
-              ) : (
-                <span className="text-sm text-gray-900">—</span>
-              )}
+              <Badge variant="default">
+                {formatShippingStatusLabel(order.shipping?.status)}
+              </Badge>
             </div>
           </div>
           <div>
@@ -220,18 +223,16 @@ function OrderDetailsContent({ order }: { order: Order }) {
           <div>
             <div className="text-xs font-medium text-gray-500 uppercase">Order Status</div>
             <div className="mt-1">
-              {order.orderStatus ? (
-                (() => {
-                  const statusLower = order.orderStatus.toLowerCase();
-                  const variant =
-                    statusLower.includes('cancelled') || statusLower.includes('failed')
-                      ? 'error'
-                      : 'default';
-                  return <Badge variant={variant}>{order.orderStatus}</Badge>;
-                })()
-              ) : (
-                <span className="text-sm text-gray-900">—</span>
-              )}
+              {(() => {
+                const rawStatus = order.orderStatus;
+                const statusLower = (rawStatus || '').toLowerCase();
+                const variant =
+                  statusLower.includes('cancelled') || statusLower.includes('failed')
+                    ? 'error'
+                    : 'default';
+                const label = formatOrderStatusLabel(rawStatus);
+                return <Badge variant={variant}>{label}</Badge>;
+              })()}
             </div>
           </div>
           <div>
@@ -259,34 +260,26 @@ function OrderDetailsContent({ order }: { order: Order }) {
 }
 
 /**
- * Order item form schema.
+ * Order item form schema for Create Order.
  */
-const orderItemSchema = z.object({
+const createOrderItemSchema = z.object({
   productId: z.string().min(1, 'Product is required'),
   quantity: z.number().int().min(1, 'Quantity must be at least 1'),
-  unitPrice: z.number().min(0, 'Unit price must be greater than or equal to 0'),
 });
 
 /**
- * Order form schema for validation.
+ * Create Order form schema for validation.
  */
-const orderFormSchema = z.object({
+const createOrderFormSchema = z.object({
   customer: z.object({
-    customerId: z.string().min(1, 'Customer ID is required'),
     name: z.string().min(1, 'Customer name is required'),
     phone: z.string().min(1, 'Phone is required'),
     email: z.string().min(1, 'Email is required').email('Invalid email address'),
   }),
-  items: z.array(orderItemSchema).min(1, 'At least one item is required'),
-  shippingAddress: z.object({
-    receiverName: z.string().min(1, 'Receiver name is required'),
-    receiverPhone: z.string().min(1, 'Receiver phone is required'),
-    fullAddress: z.string().min(1, 'Full address is required'),
-  }),
-  paymentMethod: z.string().min(1, 'Payment method is required'),
+  items: z.array(createOrderItemSchema).min(1, 'At least one item is required'),
 });
 
-type OrderFormData = z.infer<typeof orderFormSchema>;
+type CreateOrderFormData = z.infer<typeof createOrderFormSchema>;
 
 /**
  * Renders the Orders page.
@@ -316,25 +309,16 @@ export default function OrdersPage() {
     handleSubmit: handleSubmitCreate,
     reset: resetCreate,
     control: controlCreate,
-    watch: watchCreate,
-    setValue: setValueCreate,
     formState: { errors: errorsCreate },
-  } = useForm<OrderFormData>({
-    resolver: zodResolver(orderFormSchema),
+  } = useForm<CreateOrderFormData>({
+    resolver: zodResolver(createOrderFormSchema),
     defaultValues: {
       customer: {
-        customerId: '',
         name: '',
         phone: '',
         email: '',
       },
-      items: [{ productId: '', quantity: 1, unitPrice: 0 }],
-      shippingAddress: {
-        receiverName: '',
-        receiverPhone: '',
-        fullAddress: '',
-      },
-      paymentMethod: '',
+      items: [{ productId: '', quantity: 1 }],
     },
   });
 
@@ -387,19 +371,35 @@ export default function OrdersPage() {
     }
   };
 
-  const handleCreateSubmit = async (data: OrderFormData) => {
+  const handleCreateSubmit = async (data: CreateOrderFormData) => {
     const payload: CreateOrderPayload = {
-      customer: data.customer,
+      customer: {
+        name: data.customer.name,
+        phone: data.customer.phone,
+        email: data.customer.email,
+      },
       items: data.items.map((item) => ({
         productId: item.productId,
         quantity: item.quantity,
-        unitPrice: item.unitPrice,
       })),
-      shippingAddress: data.shippingAddress,
-      paymentMethod: data.paymentMethod,
     };
     await createOne(payload);
-    resetCreate();
+    // Check if there was an error - if so, keep modal open
+    // The store's fetchList is already called on success, so we don't need to call it again
+    const currentError = useOrdersStore.getState().error;
+    if (currentError) {
+      // Error is displayed via the error state in the form
+      return;
+    }
+    // Success: reset form and close modal
+    resetCreate({
+      customer: {
+        name: '',
+        phone: '',
+        email: '',
+      },
+      items: [{ productId: '', quantity: 1 }],
+    });
     setIsModalOpen(false);
   };
 
@@ -414,13 +414,6 @@ export default function OrdersPage() {
     setCancelError(null);
   };
 
-  /**
-   * Gets product by ID and returns its price for unitPrice field.
-   */
-  const getProductPrice = (productId: string): number => {
-    const product = products.find((p) => p.id === productId);
-    return product?.price || 0;
-  };
 
   const handleDelete = async (orderCode: string) => {
     if (!orderCode) return;
@@ -572,6 +565,11 @@ export default function OrdersPage() {
         }
       >
         <form onSubmit={handleSubmitCreate(handleCreateSubmit)} className="space-y-6">
+          {error && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-sm text-red-800">{error}</p>
+            </div>
+          )}
           {/* Customer Section */}
           <section>
             <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
@@ -580,19 +578,11 @@ export default function OrdersPage() {
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
-                  label="Customer ID"
-                  {...registerCreate('customer.customerId')}
-                  error={errorsCreate.customer?.customerId?.message}
-                  placeholder="Enter customer ID"
-                />
-                <Input
                   label="Customer Name"
                   {...registerCreate('customer.name')}
                   error={errorsCreate.customer?.name?.message}
                   placeholder="Enter customer name"
                 />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   label="Phone"
                   type="tel"
@@ -600,6 +590,8 @@ export default function OrdersPage() {
                   error={errorsCreate.customer?.phone?.message}
                   placeholder="Enter phone number"
                 />
+              </div>
+              <div>
                 <Input
                   label="Email"
                   type="email"
@@ -621,7 +613,7 @@ export default function OrdersPage() {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => appendCreateItem({ productId: '', quantity: 1, unitPrice: 0 })}
+                onClick={() => appendCreateItem({ productId: '', quantity: 1 })}
               >
                 + Add Item
               </Button>
@@ -630,140 +622,47 @@ export default function OrdersPage() {
               <p className="text-sm text-red-600 mb-2">{errorsCreate.items.message}</p>
             )}
             <div className="space-y-4">
-              {createItemFields.map((field, index) => {
-                const watchedProductId = watchCreate(`items.${index}.productId`);
-                const product = products.find((p) => p.id === watchedProductId);
-                const unitPrice = getProductPrice(watchedProductId);
-
-                return (
-                  <div key={field.id} className="border border-gray-200 rounded-md p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <span className="text-sm font-medium text-gray-700">Item {index + 1}</span>
-                      {createItemFields.length > 1 && (
-                        <IconButton
-                          type="button"
-                          size="sm"
-                          onClick={() => removeCreateItem(index)}
-                          aria-label={`Remove item ${index + 1}`}
-                        >
-                          🗑️
-                        </IconButton>
-                      )}
+              {createItemFields.map((field, index) => (
+                <div key={field.id} className="border border-gray-200 rounded-md p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <span className="text-sm font-medium text-gray-700">Item {index + 1}</span>
+                    {createItemFields.length > 1 && (
+                      <IconButton
+                        type="button"
+                        size="sm"
+                        onClick={() => removeCreateItem(index)}
+                        aria-label={`Remove item ${index + 1}`}
+                      >
+                        🗑️
+                      </IconButton>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Select
+                        label="Product"
+                        {...registerCreate(`items.${index}.productId`)}
+                        options={[
+                          { value: '', label: 'Select a product', disabled: true },
+                          ...products.map((p) => ({ value: p.id, label: p.name })),
+                        ]}
+                        error={errorsCreate.items?.[index]?.productId?.message}
+                      />
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <Select
-                          label="Product"
-                          {...registerCreate(`items.${index}.productId`, {
-                            onChange: (e) => {
-                              const productId = e.target.value;
-                              if (productId) {
-                                const price = getProductPrice(productId);
-                                setValueCreate(`items.${index}.unitPrice`, price);
-                              }
-                            },
-                          })}
-                          options={[
-                            { value: '', label: 'Select a product', disabled: true },
-                            ...products.map((p) => ({ value: p.id, label: p.name })),
-                          ]}
-                          error={errorsCreate.items?.[index]?.productId?.message}
-                        />
-                        {watchedProductId && product && (
-                          <p className="mt-1 text-xs text-gray-500">
-                            {product.name} - {formatMoney(product.price, product.currency)}
-                          </p>
-                        )}
-                      </div>
-                      <div>
-                        <Input
-                          label="Quantity"
-                          type="number"
-                          {...registerCreate(`items.${index}.quantity`, { valueAsNumber: true })}
-                          error={errorsCreate.items?.[index]?.quantity?.message}
-                          placeholder="1"
-                          min="1"
-                        />
-                      </div>
-                    </div>
-                    <div className="mt-4">
-                        <Input
-                          label="Unit Price"
-                          type="number"
-                          step="0.01"
-                          {...registerCreate(`items.${index}.unitPrice`, { valueAsNumber: true })}
-                          error={errorsCreate.items?.[index]?.unitPrice?.message}
-                          placeholder="0"
-                          min="0"
-                        />
-                      {watchedProductId && unitPrice > 0 && (
-                        <p className="mt-1 text-xs text-gray-500">
-                          Suggested: {formatMoney(unitPrice, 'VND')}
-                        </p>
-                      )}
+                    <div>
+                      <Input
+                        label="Quantity"
+                        type="number"
+                        {...registerCreate(`items.${index}.quantity`, { valueAsNumber: true })}
+                        error={errorsCreate.items?.[index]?.quantity?.message}
+                        placeholder="1"
+                        min="1"
+                      />
                     </div>
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
-          </section>
-
-          {/* Shipping Address Section */}
-          <section>
-            <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
-              Shipping Address
-            </h3>
-            <div className="space-y-4">
-              <Input
-                label="Receiver Name"
-                {...registerCreate('shippingAddress.receiverName')}
-                error={errorsCreate.shippingAddress?.receiverName?.message}
-                placeholder="Enter receiver name"
-              />
-              <Input
-                label="Receiver Phone"
-                type="tel"
-                {...registerCreate('shippingAddress.receiverPhone')}
-                error={errorsCreate.shippingAddress?.receiverPhone?.message}
-                placeholder="Enter receiver phone"
-              />
-              <div>
-                <label htmlFor="create-fullAddress" className="block text-sm font-medium text-gray-700 mb-1">
-                  Full Address
-                </label>
-                <textarea
-                  id="create-fullAddress"
-                  {...registerCreate('shippingAddress.fullAddress')}
-                  rows={3}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 focus:ring-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  placeholder="Enter full address"
-                />
-                {errorsCreate.shippingAddress?.fullAddress && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {errorsCreate.shippingAddress.fullAddress.message}
-                  </p>
-                )}
-              </div>
-            </div>
-          </section>
-
-          {/* Payment Section */}
-          <section>
-            <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
-              Payment
-            </h3>
-            <Select
-              label="Payment Method"
-              {...registerCreate('paymentMethod')}
-              options={[
-                { value: '', label: 'Select payment method', disabled: true },
-                { value: 'CASH', label: 'Cash' },
-                { value: 'CARD', label: 'Card' },
-                { value: 'BANK_TRANSFER', label: 'Bank Transfer' },
-                { value: 'E_WALLET', label: 'E-Wallet' },
-              ]}
-              error={errorsCreate.paymentMethod?.message}
-            />
           </section>
         </form>
       </Modal>
